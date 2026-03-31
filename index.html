@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Plan de Helado! 🍦</title>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #e0f2fe 0%, #7dd3fc 100%);
+            font-family: 'Quicksand', sans-serif;
+            color: #0c4a6e;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.6);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(2, 132, 199, 0.15);
+            max-width: 90%;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            margin-top: 0;
+            color: #0284c7;
+            font-size: 28px;
+        }
+
+        p {
+            font-size: 16px;
+            margin-bottom: 30px;
+            color: #0369a1;
+        }
+
+        .wheel-wrapper {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 0 auto 30px auto;
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(2, 132, 199, 0.4);
+            border: 5px solid #ffffff;
+        }
+
+        /* El puntero de la ruleta */
+        .pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 35px solid #0f172a;
+            z-index: 10;
+            filter: drop-shadow(0px 4px 2px rgba(0,0,0,0.3));
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            /* La transición que hace que el giro se vea suave y realista */
+            transition: transform 4.5s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+
+        button {
+            background: #0284c7;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-family: 'Quicksand', sans-serif;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(2, 132, 199, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #0369a1;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(2, 132, 199, 0.6);
+        }
+
+        button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        #result {
+            margin-top: 25px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #0369a1;
+            min-height: 35px;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.5s ease;
+        }
+
+        #result.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>¿Dónde comemos helado? 🍧</h1>
+        <p>Toca el botón y deja que el destino decida por nosotros.</p>
+        
+        <div class="wheel-wrapper">
+            <div class="pointer"></div>
+            <canvas id="wheel" width="400" height="400"></canvas>
+        </div>
+
+        <button id="spinBtn">¡Girar Ruleta!</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("wheel");
+        const ctx = canvas.getContext("2d");
+        const spinBtn = document.getElementById("spinBtn");
+        const resultDiv = document.getElementById("result");
+
+        // Opciones de heladerías
+        const options = ["Delicato gelato", "Negle", "Mr Gelato", "Mucca", "Popsy", "Los Corales"];
+        
+        // Paleta de colores en matices azules
+        const colors = [
+            "#38bdf8", // Azul claro 1
+            "#0284c7", // Azul medio 1
+            "#7dd3fc", // Azul muy claro
+            "#0369a1", // Azul oscuro 1
+            "#0ea5e9", // Azul medio 2
+            "#0c4a6e"  // Azul muy oscuro
+        ];
+
+        const numOptions = options.length;
+        const arcSize = (2 * Math.PI) / numOptions;
+
+        // Dibujar la ruleta
+        function drawWheel() {
+            for (let i = 0; i < numOptions; i++) {
+                const angle = i * arcSize;
+                
+                // Dibujar el segmento
+                ctx.beginPath();
+                ctx.arc(200, 200, 200, angle, angle + arcSize, false);
+                ctx.lineTo(200, 200);
+                ctx.fillStyle = colors[i];
+                ctx.fill();
+
+                // Dibujar el texto
+                ctx.save();
+                ctx.fillStyle = "white";
+                ctx.font = "bold 22px 'Quicksand', sans-serif";
+                
+                // Posicionar y rotar el texto
+                const textAngle = angle + arcSize / 2;
+                ctx.translate(
+                    200 + Math.cos(textAngle) * 125, 
+                    200 + Math.sin(textAngle) * 125
+                );
+                ctx.rotate(textAngle + Math.PI / 2); // Girar texto para que se lea hacia el borde
+                
+                // Sombra sutil para el texto para mejor legibilidad
+                ctx.shadowColor = "rgba(0,0,0,0.3)";
+                ctx.shadowBlur = 4;
+                
+                // Ajuste para centrar visualmente el texto
+                ctx.fillText(options[i], -ctx.measureText(options[i]).width / 2, 8);
+                ctx.restore();
+            }
+        }
+
+        drawWheel();
+
+        let currentRotation = 0;
+        let isFirstSpin = true; // El secreto de la magia
+
+        spinBtn.addEventListener("click", () => {
+            spinBtn.disabled = true;
+            resultDiv.classList.remove("show");
+
+            let targetIndex;
+
+            // Lógica "trucada" para el primer giro
+            if (isFirstSpin) {
+                targetIndex = 0; // Índice 0 es "Delicato gelato"
+                isFirstSpin = false;
+            } else {
+                // Giros posteriores son aleatorios por si la vuelve a girar
+                targetIndex = Math.floor(Math.random() * numOptions);
+            }
+
+            // --- Matemáticas del giro ---
+            const sliceAngleDeg = 360 / numOptions;
+            
+            // Para que se vea natural, agregamos un pequeño offset aleatorio dentro de la misma rebanada
+            // para que no caiga siempre exactamente en el centro matemático del texto.
+            const randomOffset = Math.floor(Math.random() * (sliceAngleDeg - 10)) - (sliceAngleDeg / 2 - 5);
+            
+            // Calculamos la rotación necesaria para que el centro del target quede arriba (270 grados)
+            // La fórmula alinea el segmento seleccionado con el puntero superior
+            const targetRotation = 270 - (sliceAngleDeg / 2) - (targetIndex * sliceAngleDeg) + randomOffset;
+
+            // Darle unas cuantas vueltas dramáticas (5 vueltas completas)
+            const baseSpins = 360 * 5; 
+            
+            // Calculamos cuánto le falta a la rotación actual para llegar al target exacto
+            const extraDegrees = (360 * 10 + targetRotation - (currentRotation % 360)) % 360;
+            const totalDegreesToAdd = baseSpins + extraDegrees;
+
+            currentRotation += totalDegreesToAdd;
+
+            // Aplicar la rotación con CSS
+            canvas.style.transform = `rotate(${currentRotation}deg)`;
+
+            // Esperar a que termine la animación (4.5 segundos)
+            setTimeout(() => {
+                resultDiv.innerText = `¡Nos vamos a ${options[targetIndex]}! 🍨💙`;
+                resultDiv.classList.add("show");
+                spinBtn.disabled = false;
+            }, 4500);
+        });
+    </script>
+</body>
+</html>
